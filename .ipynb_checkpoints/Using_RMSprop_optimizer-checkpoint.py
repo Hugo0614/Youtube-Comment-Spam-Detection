@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import RMSprop
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -12,43 +13,50 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import re
-import numpy as np
-import tensorflow as tf
 import random
 import pickle
+import numpy as np
 
-# 下载NLTK数据
-nltk.download('stopwords')
-nltk.download('wordnet')
+# only used once!
+# nltk.download('stopwords')
+# nltk.download('wordnet')
 
-# 设置随机种子
+# can set other number
 random.seed(42)
 np.random.seed(42)
 tf.random.set_seed(42)
 
-# 读取CSV文件
+# read and get data from CSV file
 def read_csv_file(file_path):
     data = pd.read_csv(file_path)
     text = data['TEXT']
     labels = data['CLASS']
     return text, labels
 
-# 读取XLSX文件
+# read and get data from XLSX file
 def read_xlsv_file(file_path):
     data = pd.read_excel(file_path)
     text = data['TEXT']
     labels = data['CLASS']
     return text, labels
 
-# 数据预处理函数
+# Pre-processing data
 def preprocess_text(text):
+    """
+    Pre-processing of text, including removal of special characters, 
+    conversion tolowercasee, deletion of stop words and word restoration
+    """
     stop_words = set(stopwords.words('english'))
     lemmatizer = WordNetLemmatizer()
     processed_text = []
     for t in text:
+        # remove the special letter
         t = re.sub(r'[^a-zA-Z]', ' ', t)
+        # convert to lowercase
         t = t.lower()
+        # Participle
         words = t.split()
+        # Removal of stop words and morphological reduction
         words = [lemmatizer.lemmatize(word) for word in words if word not in stop_words]
         processed_text.append(' '.join(words))
     return processed_text
@@ -82,7 +90,6 @@ def train_model_RMSprop(text, labels, num_epochs):
 
     return model, tokenizer, history
 
-# 模型测试函数
 def test_model(model, tokenizer, text, labels):
     text = preprocess_text(text)
     sequences = tokenizer.texts_to_sequences(text)
@@ -94,7 +101,7 @@ def test_model(model, tokenizer, text, labels):
     df = pd.DataFrame({'Text': text, 'Predicted Label': y_pred, 'Actual Label': labels})
     print(df)
 
-# 绘制训练损失曲线
+# Plotting training loss curves
 def plot_loss(history):
     loss = history.history['loss']
     epochs = range(1, len(loss) + 1)
@@ -115,14 +122,14 @@ def main():
     test_text, test_labels = read_xlsv_file("./Topic_3_Data/Topic1-youtube_spam_test.xlsx")
     test_model(model, tokenizer, test_text, test_labels)
 
-    # 保存模型
+    # Save the training model
     model.save('youtube_spam_detection_model.h5')
-    print("模型已保存为 youtube_spam_detection_model.h5")
+    print("Model saved as: youtube_spam_detection_model.h5")
 
-    # 保存 Tokenizer
+    # Save Tokenizer
     with open('tokenizer.pickle', 'wb') as handle:
         pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    print("Tokenizer 已保存为 tokenizer.pickle")
+    print("Tokenizer saved as tokenizer.pickle")
 
 if __name__ == '__main__':
     main()
